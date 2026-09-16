@@ -8,13 +8,11 @@ let configAdmin = { pass: 'admin123' };
 let editandoId = null;
 let imagenActual = '';
 
-/* ============ CARGAR CONFIG ============ */
 db.ref('config').on('value', snapshot => {
   const data = snapshot.val();
   if (data) configAdmin = data;
 });
 
-/* ============ LOGIN SIMPLE ============ */
 $('loginBtn').onclick = tryLogin;
 $('passInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 
@@ -37,19 +35,16 @@ function entrarAlPanel(){
   cargarFormConfig();
 }
 
-// Auto-login al recargar (solo en esta pestaña)
 if (sessionStorage.getItem('tovar_admin_logged') === '1'){
   entrarAlPanel();
 }
 
-/* ============ LOGOUT ============ */
 $('logoutBtn').onclick = () => {
   sessionStorage.removeItem('tovar_admin_logged');
   $('panelView').style.display = 'none';
   $('loginView').style.display = 'block';
 };
 
-/* ============ TABS ============ */
 document.querySelectorAll('.tab[data-tab]').forEach(btn => {
   btn.onclick = () => switchTab(btn.dataset.tab);
 });
@@ -58,7 +53,6 @@ function switchTab(name){
   document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'pane-' + name));
 }
 
-/* ============ LISTA DE PRODUCTOS (CON ID CORREGIDO) ============ */
 function cargarProductosAdmin(){
   db.ref('productos').on('value', snapshot => {
     const data = snapshot.val();
@@ -96,7 +90,6 @@ function deleteProduct(id){
     .catch(err => alert('Error al eliminar: ' + err.message));
 }
 
-/* ============ FORMULARIO ============ */
 $('pFile').onchange = async e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -194,7 +187,6 @@ function editProduct(id){
   });
 }
 
-/* ============ CONFIGURACIÓN ============ */
 function cargarFormConfig(){
   $('cWa').value = configAdmin.whatsapp || '';
   $('cMail').value = configAdmin.email || '';
@@ -220,7 +212,6 @@ $('saveCfg').onclick = () => {
   }).catch(err => alert('Error: ' + err.message));
 };
 
-/* ============ COMPRESIÓN DE IMAGEN ============ */
 function resizeImage(file, maxSize = 720, quality = 0.75){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

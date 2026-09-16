@@ -4,42 +4,29 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, m => (
 ));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
-let configAdmin = {};
+let configAdmin = { pass: 'admin123' };
 let editandoId = null;
 let imagenActual = '';
 
-/* ============ CONFIG EN TIEMPO REAL ============ */
+/* ============ CARGAR CONFIG ============ */
 db.ref('config').on('value', snapshot => {
   const data = snapshot.val();
-  configAdmin = data || { whatsapp:'', email:'', nombre:'TOVARINNOVATIONS' };
+  if (data) configAdmin = data;
 });
 
-/* ============ LOGIN CON FIREBASE AUTH ============ */
+/* ============ LOGIN SIMPLE ============ */
 $('loginBtn').onclick = tryLogin;
 $('passInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
-$('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 
 function tryLogin(){
-  const email = $('emailInput').value.trim();
-  const pass = $('passInput').value;
-  const alertBox = $('loginAlert');
-
-  if (!email || !pass){
-    alertBox.textContent = 'Completa correo y contraseña';
-    alertBox.classList.add('show');
-    return;
+  const val = $('passInput').value;
+  if (val === (configAdmin.pass || 'admin123')){
+    $('loginAlert').classList.remove('show');
+    sessionStorage.setItem('tovar_admin_logged', '1');
+    entrarAlPanel();
+  } else {
+    $('loginAlert').classList.add('show');
   }
-
-  firebase.auth().signInWithEmailAndPassword(email, pass)
-    .then(() => {
-      alertBox.classList.remove('show');
-      sessionStorage.setItem('tovar_admin_logged', '1');
-      entrarAlPanel();
-    })
-    .catch(err => {
-      alertBox.textContent = 'Correo o contraseña incorrectos';
-      alertBox.classList.add('show');
-    });
 }
 
 function entrarAlPanel(){
@@ -50,20 +37,16 @@ function entrarAlPanel(){
   cargarFormConfig();
 }
 
-/* Detectar sesión activa al recargar */
-firebase.auth().onAuthStateChanged(user => {
-  if (user && !$('panelView')?.style.display.includes('block')){
-    entrarAlPanel();
-  }
-});
+// Auto-login al recargar (solo en esta pestaña)
+if (sessionStorage.getItem('tovar_admin_logged') === '1'){
+  entrarAlPanel();
+}
 
 /* ============ LOGOUT ============ */
 $('logoutBtn').onclick = () => {
-  firebase.auth().signOut().then(() => {
-    sessionStorage.removeItem('tovar_admin_logged');
-    $('panelView').style.display = 'none';
-    $('loginView').style.display = 'block';
-  });
+  sessionStorage.removeItem('tovar_admin_logged');
+  $('panelView').style.display = 'none';
+  $('loginView').style.display = 'block';
 };
 
 /* ============ TABS ============ */
@@ -109,11 +92,11 @@ function renderAdminList(items){
 function deleteProduct(id){
   if (!confirm('¿Eliminar este producto?')) return;
   db.ref('productos/' + id).remove()
-    .then(() => console.log('Producto eliminado:', id))
+    .then(() => console.log('Eliminado:', id))
     .catch(err => alert('Error al eliminar: ' + err.message));
 }
 
-/* ============ FORMULARIO DE PRODUCTO ============ */
+/* ============ FORMULARIO ============ */
 $('pFile').onchange = async e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -161,7 +144,7 @@ $('saveBtn').onclick = () => {
         resetForm();
         switchTab('productos');
       })
-      .catch(err => alert('Error al actualizar: ' + err.message));
+      .catch(err => alert('Error: ' + err.message));
   } else {
     db.ref('productos/' + uid()).set(prod)
       .then(() => {
@@ -171,7 +154,7 @@ $('saveBtn').onclick = () => {
         resetForm();
         switchTab('productos');
       })
-      .catch(err => alert('Error al guardar: ' + err.message));
+      .catch(err => alert('Error: ' + err.message));
   }
 };
 
@@ -203,7 +186,7 @@ function editProduct(id){
     $('pCat').value = p.categoria || '';
     $('pUrl').value = (p.imagen && !p.imagen.startsWith('data:')) ? p.imagen : '';
     $('preview').innerHTML = imagenActual
-      ? `<img src="${esc(imagenActual)}" alt="preview">`
+      ? `<img src="${imagenActual}" alt="preview">`
       : '<span>Sin imagen</span>';
     $('saveBtn').textContent = '💾 Actualizar producto';
     $('cancelBtn').style.display = 'inline-flex';
@@ -216,20 +199,25 @@ function cargarFormConfig(){
   $('cWa').value = configAdmin.whatsapp || '';
   $('cMail').value = configAdmin.email || '';
   $('cNombre').value = configAdmin.nombre || '';
+  $('cPass').value = '';
 }
 
 $('saveCfg').onclick = () => {
   const nueva = {
     whatsapp: $('cWa').value.replace(/\D/g,''),
     email: $('cMail').value.trim() || configAdmin.email,
-    nombre: $('cNombre').value.trim() || configAdmin.nombre
+    nombre: $('cNombre').value.trim() || configAdmin.nombre,
+    pass: configAdmin.pass || 'admin123'
   };
+  const np = $('cPass').value.trim();
+  if (np) nueva.pass = np;
 
-  db.ref('config').update(nueva).then(() => {
+  db.ref('config').set(nueva).then(() => {
     const a = $('cfgAlert');
     a.classList.add('show');
     setTimeout(() => a.classList.remove('show'), 2500);
-  }).catch(err => alert('Error al guardar: ' + err.message));
+    $('cPass').value = '';
+  }).catch(err => alert('Error: ' + err.message));
 };
 
 /* ============ COMPRESIÓN DE IMAGEN ============ */

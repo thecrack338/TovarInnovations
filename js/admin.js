@@ -4,27 +4,44 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, m => (
 ));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
-let configAdmin = { pass: 'admin123' };
+let configAdmin = {};
 let editandoId = null;
 let imagenActual = '';
 
+/* ============ CARGAR CONFIG ============ */
 db.ref('config').on('value', snapshot => {
   const data = snapshot.val();
   if (data) configAdmin = data;
+  if ($('panelView') && $('panelView').style.display === 'block'){
+    cargarFormConfig();
+  }
 });
 
+/* ============ LOGIN CON FIREBASE AUTH ============ */
 $('loginBtn').onclick = tryLogin;
 $('passInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+$('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 
 function tryLogin(){
-  const val = $('passInput').value;
-  if (val === (configAdmin.pass || 'admin123')){
-    $('loginAlert').classList.remove('show');
-    sessionStorage.setItem('tovar_admin_logged', '1');
-    entrarAlPanel();
-  } else {
-    $('loginAlert').classList.add('show');
+  const email = $('emailInput').value.trim();
+  const pass = $('passInput').value;
+  const alertBox = $('loginAlert');
+
+  if (!email || !pass){
+    alertBox.textContent = 'Completa correo y contraseña';
+    alertBox.classList.add('show');
+    return;
   }
+
+  firebase.auth().signInWithEmailAndPassword(email, pass)
+    .then(() => {
+      alertBox.classList.remove('show');
+      entrarAlPanel();
+    })
+    .catch(err => {
+      alertBox.textContent = 'Correo o contraseña incorrectos';
+      alertBox.classList.add('show');
+    });
 }
 
 function entrarAlPanel(){
@@ -35,16 +52,27 @@ function entrarAlPanel(){
   cargarFormConfig();
 }
 
-if (sessionStorage.getItem('tovar_admin_logged') === '1'){
-  entrarAlPanel();
-}
+/* Detectar sesión activa al recargar */
+firebase.auth().onAuthStateChanged(user => {
+  if (user){
+    entrarAlPanel();
+  } else {
+    $('panelView').style.display = 'none';
+    $('loginView').style.display = 'block';
+  }
+});
 
+/* ============ LOGOUT ============ */
 $('logoutBtn').onclick = () => {
-  sessionStorage.removeItem('tovar_admin_logged');
-  $('panelView').style.display = 'none';
-  $('loginView').style.display = 'block';
+  firebase.auth().signOut().then(() => {
+    $('panelView').style.display = 'none';
+    $('loginView').style.display = 'block';
+    $('emailInput').value = '';
+    $('passInput').value = '';
+  });
 };
 
+/* ============ TABS ============ */
 document.querySelectorAll('.tab[data-tab]').forEach(btn => {
   btn.onclick = () => switchTab(btn.dataset.tab);
 });
@@ -53,6 +81,7 @@ function switchTab(name){
   document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'pane-' + name));
 }
 
+/* ============ LISTA DE PRODUCTOS ============ */
 function cargarProductosAdmin(){
   db.ref('productos').on('value', snapshot => {
     const data = snapshot.val();
@@ -90,6 +119,7 @@ function deleteProduct(id){
     .catch(err => alert('Error al eliminar: ' + err.message));
 }
 
+/* ============ FORMULARIO DE PRODUCTO ============ */
 $('pFile').onchange = async e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -187,31 +217,28 @@ function editProduct(id){
   });
 }
 
+/* ============ CONFIGURACIÓN ============ */
 function cargarFormConfig(){
   $('cWa').value = configAdmin.whatsapp || '';
   $('cMail').value = configAdmin.email || '';
   $('cNombre').value = configAdmin.nombre || '';
-  $('cPass').value = '';
 }
 
 $('saveCfg').onclick = () => {
   const nueva = {
     whatsapp: $('cWa').value.replace(/\D/g,''),
-    email: $('cMail').value.trim() || configAdmin.email,
-    nombre: $('cNombre').value.trim() || configAdmin.nombre,
-    pass: configAdmin.pass || 'admin123'
+    email: $('cMail').value.trim() || configAdmin.email || '',
+    nombre: $('cNombre').value.trim() || configAdmin.nombre || 'TOVARINNOVATIONS'
   };
-  const np = $('cPass').value.trim();
-  if (np) nueva.pass = np;
 
-  db.ref('config').set(nueva).then(() => {
+  db.ref('config').update(nueva).then(() => {
     const a = $('cfgAlert');
     a.classList.add('show');
     setTimeout(() => a.classList.remove('show'), 2500);
-    $('cPass').value = '';
-  }).catch(err => alert('Error: ' + err.message));
+  }).catch(err => alert('Error al guardar: ' + err.message));
 };
 
+/* ============ COMPRESIÓN DE IMAGEN ============ */
 function resizeImage(file, maxSize = 720, quality = 0.75){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

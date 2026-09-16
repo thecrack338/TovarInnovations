@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | TovarInnovations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<style>
+  body{padding:30px 16px}
+  .admin-wrap{max-width:980px;margin:0 auto}
+  .admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px;flex-wrap:wrap;gap:14px}
+  .admin-header h1{font-size:1.3rem;letter-spacing:1px}
+  .admin-header a{color:var(--muted);font-size:.85rem;text-decoration:none}
+  .admin-header a:hover{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="admin-wrap">
+  <div class="admin-header">
+    <h1>🔒 PANEL DE ADMINISTRACIÓN</h1>
+    <a href="index.html">← Volver a la página pública</a>
+  </div>
+
+  <div id="loginView">
+    <div class="login">
+      <div class="icon">🔒</div>
+      <h3>Acceso restringido</h3>
+      <p>Ingresa la contraseña para administrar tu catálogo.</p>
+      <div class="alert err" id="loginAlert">Contraseña incorrecta</div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="passInput" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary btn-block" id="loginBtn">Ingresar</button>
+      <p class="hint" style="text-align:center;margin-top:14px">Contraseña por defecto: <b>admin123</b></p>
+    </div>
+  </div>
+
+  <div id="panelView" style="display:none">
+    <div class="tabs">
+      <button class="tab active" data-tab="productos">📦 Productos</button>
+      <button class="tab" data-tab="nuevo">➕ Agregar</button>
+      <button class="tab" data-tab="config">⚙ Configuración</button>
+      <button class="tab" id="logoutBtn" style="margin-left:auto;color:#ff7b7b">Cerrar sesión</button>
+    </div>
+
+    <div class="pane active" id="pane-productos">
+      <p class="hint" style="margin-bottom:16px">Aquí puedes editar o eliminar los productos publicados.</p>
+      <div class="admin-list" id="adminList"></div>
+    </div>
+
+    <div class="pane" id="pane-nuevo">
+      <div class="alert ok" id="saveAlert">✔ Guardado correctamente</div>
+      <div class="row">
+        <div>
+          <div class="field">
+            <label>Nombre del producto *</label>
+            <input type="text" id="pNombre" placeholder="Ej: Camisa sublimada personalizada">
+          </div>
+          <div class="field">
+            <label>Descripción</label>
+            <textarea id="pDesc" placeholder="Detalles, materiales, tallas, colores..."></textarea>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Precio</label>
+              <input type="text" id="pPrecio" placeholder="Ej: $15.00">
+            </div>
+            <div class="field">
+              <label>Categoría</label>
+              <input type="text" id="pCat" placeholder="Ej: Publicidad" list="catList">
+              <datalist id="catList">
+                <option value="Compras Online">
+                <option value="Reparación PC">
+                <option value="CCTV">
+                <option value="Publicidad">
+                <option value="Camisas">
+                <option value="Lona Vinil">
+              </datalist>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="field">
+            <label>Imagen del producto</label>
+            <div class="preview" id="preview"><span>Sin imagen</span></div>
+            <input type="file" id="pFile" accept="image/*" style="padding:9px">
+            <p class="hint">O pega una URL de imagen:</p>
+            <input type="url" id="pUrl" placeholder="https://..." style="margin-top:6px">
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="saveBtn">💾 Guardar producto</button>
+        <button class="btn btn-ghost" id="cancelBtn" style="display:none">Cancelar edición</button>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-config">
+      <div class="alert ok" id="cfgAlert">✔ Configuración guardada</div>
+      <div class="row">
+        <div class="field">
+          <label>Número de WhatsApp (con código de país, sin +)</label>
+          <input type="text" id="cWa" placeholder="Ej: 584241234567">
+        </div>
+        <div class="field">
+          <label>Correo electrónico</label>
+          <input type="email" id="cMail" placeholder="tucorreo@gmail.com">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Nombre del negocio</label>
+          <input type="text" id="cNombre" placeholder="TOVARINNOVATIONS">
+        </div>
+        <div class="field">
+          <label>Nueva contraseña de admin</label>
+          <input type="text" id="cPass" placeholder="Dejar vacío para no cambiar">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <button class="btn btn-primary" id="saveCfg">💾 Guardar configuración</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/admin.js"></script>
+
+</body>
+</html>
